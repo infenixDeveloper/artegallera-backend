@@ -99,7 +99,7 @@ async function GetId(req, res) {
     let result = {};
     try {
         let { id } = req.params;
-        let dtarounds = await events.findByPk(id);
+        let dtarounds = await rounds.findByPk(id);
         if (dtarounds) {
             result = {
                 success: true,

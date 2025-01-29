@@ -29,11 +29,38 @@ async function getWinnerByEvent(req, res) {
     const { id } = req.params
 
     const winner = await winners.findAll({
-      where: { id_event: id },
+      where: { id_event: id, team_winner: ["red", "green"] },
       include: [{
         model: betting,
         as: "bets"
       }]
+    });
+
+    if (winner) {
+      result = {
+        success: true,
+        message: 'Ganadores encontrados',
+        data: winner
+      };
+    }
+
+  } catch (error) {
+    result = {
+      success: false,
+      message: 'Error al obtener los ganadores',
+      error: error.message
+    };
+  }
+  return res.json(result);
+}
+
+async function getTotalAmountByEvent(req, res) {
+  let result = {}
+  try {
+    const { id } = req.params
+
+    const winner = await winners.sum("total_amount", {
+      where: { id_event: id, team_winner: ["red", "green"] },
     });
 
     if (winner) {
@@ -77,6 +104,7 @@ const getEarningsByEvent = async (req, res) => {
 module.exports = {
   getAllWinner,
   getWinnerByEvent,
-  getEarningsByEvent
+  getEarningsByEvent,
+  getTotalAmountByEvent
 }
 

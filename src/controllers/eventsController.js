@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const { events } = require("../db");
+const { events, users } = require("../db");
 const { Op } = require("sequelize");
 
 async function GetAll(req, res) {
@@ -52,9 +52,10 @@ async function Create(req, res) {
     try {
         //verifica y cambia el is_active a false de los eventos que esten activos
         await events.update({ is_active: false }, { where: { is_active: true } });
-        
+
         let { name, date, time, location, is_active, is_betting_active } = req.body;
-        let dtaevent = await events.create({ name, date, time, location, is_active, is_betting_active });
+        const totalAmountUsers = await users.sum('initial_balance', { where: { is_active: true } });
+        let dtaevent = await events.create({ name, date, time, location, is_active, is_betting_active, total_amount: totalAmountUsers });
         if (dtaevent) {
             result = {
                 success: true,
