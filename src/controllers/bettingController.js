@@ -1,4 +1,4 @@
-const { betting, users, events } = require("../db");
+const { betting, users, events, marriedbetting } = require("../db");
 const { Op } = require("sequelize");
 
 async function GetAll(req, res) {
@@ -185,6 +185,57 @@ async function Delete(req, res) {
     }
 }
 
+async function getMarriedBetting(req, res) {
+    const { id_event, id_round } = req.params;
+    console.log(id_event, id_round);
+
+    try {
+        const marriedBetting = await marriedbetting.findAll({
+            include: [
+                {
+                    model: betting,
+                    as: 'bettingOne',
+                    attributes: ['id', 'amount', 'status'],
+                    include: [
+                        {
+                            model: users,
+                            attributes: ['username'], // Solo traemos el nombre del usuario
+                        }
+                    ]
+                },
+                {
+                    model: betting,
+                    as: 'bettingTwo',
+                    attributes: ['id', 'amount', 'status'],
+                    include: [
+                        {
+                            model: users,
+                            attributes: ['username'], // Solo traemos el nombre del usuario
+                        }
+                    ]
+                }
+            ],
+            where: { id_event, id_round },
+            attributes: ['id_betting_one', 'id_betting_two']
+        });
+
+        return res.json({
+            success: true,
+            message: 'Apuestas encontradas',
+            data: marriedBetting
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al obtener las apuestas',
+            error: error.message
+        });
+    }
+}
+
+
+
+
 module.exports = {
     GetAll,
     GetId,
@@ -193,4 +244,5 @@ module.exports = {
     Delete,
     GetBetsByTeam,
     getBetsByRound,
+    getMarriedBetting
 };

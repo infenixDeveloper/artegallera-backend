@@ -3,44 +3,43 @@ const {
   Model
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class betting extends Model {
+  class marriedBetting extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      models.betting.belongsTo(models.users, {
-        foreignKey: 'id_user',
+      this.belongsTo(models.rounds, {
+        foreignKey: 'id_round',
         targetKey: 'id'
       });
-      models.betting.belongsTo(models.events, {
+      this.belongsTo(models.events, {
         foreignKey: 'id_event',
         targetKey: 'id'
       });
-      models.betting.belongsTo(models.winners, {
-        foreignKey: 'id_winner',
-        as: 'winner'
-      });
-      models.betting.hasOne(models.marriedbetting, {
+      this.belongsTo(models.betting, {
         foreignKey: 'id_betting_one',
-        as: 'bettingOne'
+        as: 'bettingOne' // Se define un alias único
       });
-
-      models.betting.hasOne(models.marriedbetting, {
+      this.belongsTo(models.betting, {
         foreignKey: 'id_betting_two',
-        as: 'bettingTwo'
+        as: 'bettingTwo' // Se define un alias único
       });
     }
   }
-  betting.init({
+  marriedBetting.init({
     id: {
       allowNull: false,
       autoIncrement: true,
       primaryKey: true,
       type: DataTypes.INTEGER
     },
-    id_user: {
+    id_betting_one: {
+      allowNull: false,
+      type: DataTypes.INTEGER
+    },
+    id_betting_two: {
       allowNull: false,
       type: DataTypes.INTEGER
     },
@@ -48,26 +47,13 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       type: DataTypes.INTEGER
     },
-    id_winner: {
-      allowNull: true,
+    id_round: {
+      allowNull: false,
       type: DataTypes.INTEGER
-    },
-    team: {
-      allowNull: false,
-      type: DataTypes.STRING
-    },
-    amount: {
-      allowNull: false,
-      type: DataTypes.DOUBLE
-    },
-    status: {
-      allowNull: false,
-      type: DataTypes.INTEGER,
-      defaultValue: 0
     },
   }, {
     sequelize,
-    modelName: 'betting',
+    modelName: 'marriedbetting',
   });
-  return betting;
+  return marriedBetting;
 };
