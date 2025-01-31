@@ -7,7 +7,7 @@ const routes = require("./routers/index.js");
 const { logger } = require("./utils/logger.js");
 const { specs, swaggerUi } = require('./swagger.js');
 const env = process.env;
-
+const cors = require("cors");
 const server = express();
 
 server.name = "arteGallera";
@@ -17,6 +17,15 @@ if (env.NODE_ENV === 'production') {
 }
 
 server.use(helmet({ crossOriginEmbedderPolicy: false }));
+
+
+server.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
+    allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+    credentials: true
+}));
+
 
 server.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 server.use(bodyParser.json({ limit: "50mb" }));
@@ -38,7 +47,7 @@ server.use((req, res, next) => {
     next();
 });
 server.use('/docs', swaggerUi.serve, swaggerUi.setup(specs));
-server.use("/api/", routes);
+server.use("/", routes);
 
 server.use((err, req, res, next) => {
     const status = err.status || 500;
