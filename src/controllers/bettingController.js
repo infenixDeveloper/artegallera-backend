@@ -195,7 +195,7 @@ async function getMarriedBetting(req, res) {
                 {
                     model: betting,
                     as: 'bettingOne',
-                    attributes: ['id', 'amount', 'status'],
+                    attributes: ['id', 'amount', 'status', "team"],
                     include: [
                         {
                             model: users,
@@ -232,9 +232,6 @@ async function getMarriedBetting(req, res) {
         });
     }
 }
-
-
-
 
 module.exports = {
     GetAll,
