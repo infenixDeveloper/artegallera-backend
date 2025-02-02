@@ -57,7 +57,8 @@ module.exports = (sequelize, DataTypes) => {
     },
     total_amount: {
       allowNull: true,
-      type: DataTypes.DOUBLE
+      type: DataTypes.DOUBLE,
+      defaultValue: 0.0
     }
   }, {
     sequelize,
