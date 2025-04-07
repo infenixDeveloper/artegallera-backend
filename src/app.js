@@ -46,6 +46,11 @@ server.use((req, res, next) => {
     logger.info(`Received a ${req.method} request for ${req.url}`);
     next();
 });
+// Ruta base de saludo
+// server.get('/', (req, res) => {
+//     res.status(200).send('Conectado a la API de arteGallera!!!');
+// });
+
 server.use('/docs', swaggerUi.serve, swaggerUi.setup(specs));
 server.use("/", routes);
 

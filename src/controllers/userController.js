@@ -141,7 +141,9 @@ const withdrawBalance = async (req, res) => {
 
 const getTotalAmount = async (req, res) => {
   try {
-    const totalAmount = await users.sum('initial_balance');
+    // suma el saldo inicial de todos los usuarios con estatus is_active = true
+    const totalAmount = await users.sum('initial_balance', { where: { is_active: true } });
+    // const totalAmount = await users.sum('initial_balance');
     return res.json({ success: true, total: totalAmount });
   } catch (error) {
     console.error("Error al obtener el monto total:", error);
@@ -164,6 +166,39 @@ const deleteUser = async (req, res) => {
   }
 }
 
+// FUNCION PARA EXPORTAR LOS USUARIOS DESDE EL BACKEND A UN ARCHIVO EXCEL
+const exportUsersToExcel = async (req, res) => {
+  try {
+    const usersData = await users.findAll();
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Usuarios');
+
+    worksheet.columns = [
+      { header: 'ID', key: 'id', width: 10 },
+      { header: 'Username', key: 'username', width: 20 },
+      { header: 'Email', key: 'email', width: 30 },
+      { header: 'First Name', key: 'first_name', width: 20 },
+      { header: 'Last Name', key: 'last_name', width: 20 },
+      { header: 'Balance', key: 'initial_balance', width: 15 },
+      { header: 'Status', key: 'is_active', width: 15 },
+    ];
+
+    usersData.forEach(user => {
+      worksheet.addRow({ id: user.id, username: user.username, email: user.email, first_name: user.first_name, last_name: user.last_name, initial_balance: user.initial_balance, is_active: user.is_active });
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="users.xlsx"');
+
+    await workbook.xlsx.write(res);
+  } catch (error) {
+    console.error('Error al exportar los usuarios:', error);
+    res.status(500).send('Error al exportar los usuarios');
+  }
+}
 
 
-module.exports = { getUsers, updateUser, addBalance, withdrawBalance, deleteUser, getUserById, getTotalAmount }
+
+
+module.exports = { getUsers, updateUser, addBalance, withdrawBalance, deleteUser, getUserById, getTotalAmount, exportUsersToExcel };
+

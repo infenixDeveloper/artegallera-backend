@@ -22,7 +22,14 @@ async function login(req, res) {
                 message: 'Usuario o contraseña incorrecto'
             });
         }
-
+        // validar si el usuario está activo
+        if (dtaUser.is_active === false) {
+            return res.status(401).json({
+                success: false,
+                message: 'Usuario inactivo, por favor contacta al administrador'
+            });
+        }
+        
         const isMatch = await bcrypt.compare(password, dtaUser.password);
         if (!isMatch) {
             return res.status(401).json({

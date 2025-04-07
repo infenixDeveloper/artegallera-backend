@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
-const { events, users } = require("../db");
-const { Op } = require("sequelize");
+const { events, users,rounds } = require("../db");
+const { Op, where } = require("sequelize");
+const { log } = require("winston");
 
 async function GetAll(req, res) {
     let result = {};
@@ -50,8 +51,20 @@ async function GetId(req, res) {
 async function Create(req, res) {
     let result = {};
     try {
+        // se verifica que no haya peleas abiertas o sin ganador en el evento actual 
+        const bettingsActive = await rounds.findOne({where:{ id_winner:null }})
+        if (bettingsActive) {
+            result = {
+                success: false,
+                data: {},
+                message: `La pelea #${bettingsActive.round} esta abierta o no tiene ganador.`
+            };
+            return res.json(result);
+        }
         //verifica y cambia el is_active a false de los eventos que esten activos
         await events.update({ is_active: false }, { where: { is_active: true } });
+
+
 
         let { name, date, time, location, is_active, is_betting_active } = req.body;
         const totalAmountUsers = await users.sum('initial_balance', { where: { is_active: true } });

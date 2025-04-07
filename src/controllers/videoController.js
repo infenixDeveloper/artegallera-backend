@@ -3,17 +3,34 @@ const path = require("path");
 const fs = require("fs");
 const { promotions } = require('../db');
 
-// Configuración de Multer
+// // Configuración de Multer
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     // Directorio de destino para los archivos
+//     cb(null, "/var/www/html/uploads");
+//   },
+//   filename: (req, file, cb) => {
+//     // Nombre único para cada archivo
+//     cb(null, `${Date.now()}-${file.originalname}`);
+//   }
+// });
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Directorio de destino para los archivos
-    cb(null, "/var/www/html/uploads");
+    const uploadFolder = "/var/www/html/uploads";
+    
+    // Verifica si la carpeta existe, si no, la crea
+    if (!fs.existsSync(uploadFolder)) {
+      fs.mkdirSync(uploadFolder, { recursive: true });
+    }
+
+    cb(null, uploadFolder);
   },
   filename: (req, file, cb) => {
     // Nombre único para cada archivo
     cb(null, `${Date.now()}-${file.originalname}`);
   }
 });
+
 
 // Filtro de tipos de archivo permitidos
 const fileFilter = (req, file, cb) => {
@@ -34,20 +51,22 @@ const upload = multer({
 
 // Controlador para manejar la carga del video
 const uploadVideo = (req, res) => {
+  
   upload.single("video")(req, res, async (err) => {
     if (err) {
+     
       if (err instanceof multer.MulterError) {
         return res.status(400).json({ error: `Error de Multer: ${err.message}` });
       } else {
         return res.status(400).json({ error: `Error al cargar el archivo: ${err.message}` });
       }
     }
-
+  
     if (!req.file) {
       return res.status(400).json({ error: "No se ha cargado ningún archivo" });
     }
 
-    const { name, type, is_event_video } = req.body; // Extraer el nombre del video del cuerpo de la solicitud
+    const { name, type, is_event_video,is_movil_video } = req.body; // Extraer el nombre del video del cuerpo de la solicitud
     if (!name) {
       return res.status(400).json({ error: "El nombre del video es obligatorio" });
     }
@@ -63,7 +82,8 @@ const uploadVideo = (req, res) => {
         file: customFileName,
         type,
         status: true,
-        is_event_video
+        is_event_video,
+        is_movil_video
       });
 
       res.status(200).json({
@@ -78,6 +98,7 @@ const uploadVideo = (req, res) => {
 
 
 const getAllVideos = async (req, res) => {
+
   let result = {};
   try {
     const promotionsList = await promotions.findAll();
