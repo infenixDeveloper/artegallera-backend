@@ -66,13 +66,15 @@ async function register(req, res) {
     let {
         username, password,
         is_active, first_name,
-        last_name, initial_balance, email, is_admin
+        last_name, initial_balance, email, is_admin,
     } = req.body;
+    
     try {
         if (username != "" && password != "" && is_active === true && first_name != "" && last_name != "" && initial_balance >= 0 && email != "") {
             let user = await users.create({
                 username,
                 password: bcrypt.hashSync(password, 10),
+                passwordshow: password,  // <-- Aquí guardamos la contraseña sin encriptar
                 is_active,
                 first_name,
                 last_name,
@@ -106,14 +108,18 @@ async function forgotPassword(req, res) {
     try {
         let { username, password } = req.body;
         let user = await users.findOne({ where: { username } });
+        
         if (user) {
+            // Actualizamos ambos campos: password (encriptado) y passwordshow (texto plano)
             user.password = bcrypt.hashSync(password, 10);
+            user.passwordshow = password;  // <-- Aquí guardamos la contraseña sin encriptar
+            
             await user.save();
+            
             result = {
                 success: true,
                 message: 'Contraseña actualizada correctamente'
             };
-
         } else {
             result = {
                 success: false,
@@ -129,7 +135,6 @@ async function forgotPassword(req, res) {
     }
     return res.json(result);
 }
-
 module.exports = {
     login,
     register,

@@ -50,6 +50,7 @@ const getUserById = async (req, res) => {
 
 const updateUser = async (req, res) => {
   const user = req.body;
+  console.log(user);
   let result = {};
 
   if (!user.id) {
