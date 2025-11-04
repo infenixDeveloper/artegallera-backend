@@ -42,12 +42,26 @@ async function login(req, res) {
             expiresIn: 86400
         });
 
+        // Preparar datos del usuario para la respuesta (excluir password)
+        const userData = {
+            id: dtaUser.id,
+            username: dtaUser.username,
+            email: dtaUser.email,
+            first_name: dtaUser.first_name,
+            last_name: dtaUser.last_name,
+            is_active: dtaUser.is_active,
+            is_admin: dtaUser.is_admin,
+            initial_balance: dtaUser.initial_balance,
+            image: dtaUser.image,
+            is_active_chat: dtaUser.is_active_chat !== undefined ? dtaUser.is_active_chat : true
+        };
+
         return res.status(200).json({
             success: true,
             message: 'Inicio de sesión exitoso',
             data: {
                 token,
-                user: dtaUser
+                user: userData
             }
         });
 

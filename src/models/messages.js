@@ -33,11 +33,24 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER
     },
     content: {
-      allowNull: false,
+      allowNull: true,
       type: DataTypes.TEXT
     },
-    event_id: {
+    image_url: {
+      allowNull: true,
+      type: DataTypes.STRING
+    },
+    image_name: {
+      allowNull: true,
+      type: DataTypes.STRING
+    },
+    message_type: {
       allowNull: false,
+      type: DataTypes.ENUM('text', 'image'),
+      defaultValue: 'text'
+    },
+    event_id: {
+      allowNull: true,
       type: DataTypes.INTEGER,
       references: {
         model: 'events',

@@ -167,6 +167,181 @@ const deleteUser = async (req, res) => {
   }
 }
 
+// Obtener estado del chat de un usuario (con caché Redis)
+const getUserChatStatus = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    // Validar que el ID sea válido
+    if (!id || isNaN(parseInt(id))) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de usuario inválido"
+      });
+    }
+
+    // Intentar obtener del caché Redis primero
+    let cachedStatus = null;
+    try {
+      const { messageCache } = require("../config/redis");
+      const cacheKey = `user:chat-status:${id}`;
+      const cached = await messageCache.getMessages(cacheKey);
+      
+      if (cached) {
+        console.log(`📦 [CACHE] Estado de chat obtenido del caché para usuario ${id}`);
+        return res.status(200).json({
+          success: true,
+          data: cached,
+          cached: true
+        });
+      }
+    } catch (redisError) {
+      console.warn("⚠️ Redis no disponible, obteniendo de BD:", redisError.message);
+    }
+
+    // Si no está en caché, obtener de la base de datos
+    const user = await users.findOne({ 
+      where: { id: parseInt(id) },
+      attributes: ['id', 'username', 'is_active_chat', 'is_admin']
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Usuario no encontrado"
+      });
+    }
+
+    const userData = {
+      id: user.id,
+      username: user.username,
+      is_active_chat: user.is_active_chat,
+      is_admin: user.is_admin
+    };
+
+    // Guardar en caché Redis (TTL: 3 segundos)
+    try {
+      const { messageCache } = require("../config/redis");
+      const cacheKey = `user:chat-status:${id}`;
+      await messageCache.setMessages(cacheKey, userData, 3);
+      console.log(`✅ Estado de chat cacheado para usuario ${id}`);
+    } catch (redisError) {
+      console.warn("⚠️ No se pudo cachear en Redis:", redisError.message);
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: userData,
+      cached: false
+    });
+
+  } catch (error) {
+    console.error("Error al obtener estado del chat:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: error.message
+    });
+  }
+};
+
+// Actualizar estado del chat de un usuario
+const updateUserChatStatus = async (req, res) => {
+  const { id } = req.params;
+  const { is_active_chat } = req.body;
+
+  try {
+    // Validar que el ID sea válido
+    if (!id || isNaN(parseInt(id))) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de usuario inválido"
+      });
+    }
+
+    // Validar que is_active_chat sea un boolean
+    if (typeof is_active_chat !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: "is_active_chat debe ser un valor booleano"
+      });
+    }
+
+    // Buscar el usuario
+    const user = await users.findOne({ where: { id: parseInt(id) } });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Usuario no encontrado"
+      });
+    }
+
+    // Prevenir que se bloquee a administradores
+    if (user.is_admin === true && !is_active_chat) {
+      return res.status(403).json({
+        success: false,
+        message: "No se puede bloquear el chat de un administrador"
+      });
+    }
+
+    // Actualizar el estado del chat
+    await users.update(
+      { is_active_chat },
+      { where: { id: parseInt(id) } }
+    );
+
+    // Obtener el usuario actualizado
+    const updatedUser = await users.findOne({ where: { id: parseInt(id) } });
+
+    console.log(`✅ Estado de chat actualizado para usuario ${id}: ${is_active_chat ? 'Activo' : 'Bloqueado'}`);
+
+    // Invalidar caché de Redis para este usuario
+    try {
+      const { messageCache } = require("../config/redis");
+      const cacheKey = `user:chat-status:${id}`;
+      await messageCache.invalidateMessages([cacheKey]);
+      console.log(`🗑️ Caché invalidado para usuario ${id}`);
+    } catch (redisError) {
+      console.warn("⚠️ No se pudo invalidar caché de Redis:", redisError.message);
+    }
+
+    // Emitir evento por Socket.IO para notificar al usuario en tiempo real
+    try {
+      if (global.io) {
+        // Emitir a todas las salas (el usuario podría estar en cualquiera)
+        global.io.emit('user:chatStatusChanged', {
+          userId: parseInt(id),
+          username: user.username,
+          is_active_chat: is_active_chat
+        });
+        console.log(`📢 [SOCKET] Emitiendo cambio de estado de chat para usuario ${id}`);
+      }
+    } catch (socketError) {
+      console.error('❌ Error al emitir evento por socket:', socketError);
+      // No fallar la petición si falla el socket
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Usuario ${is_active_chat ? 'desbloqueado' : 'bloqueado'} exitosamente`,
+      data: {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        is_active_chat: updatedUser.is_active_chat
+      }
+    });
+
+  } catch (error) {
+    console.error("Error al actualizar estado del chat:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error interno del servidor",
+      error: error.message
+    });
+  }
+};
+
 // FUNCION PARA EXPORTAR LOS USUARIOS DESDE EL BACKEND A UN ARCHIVO EXCEL
 const exportUsersToExcel = async (req, res) => {
   try {
@@ -201,5 +376,5 @@ const exportUsersToExcel = async (req, res) => {
 
 
 
-module.exports = { getUsers, updateUser, addBalance, withdrawBalance, deleteUser, getUserById, getTotalAmount, exportUsersToExcel };
+module.exports = { getUsers, updateUser, addBalance, withdrawBalance, deleteUser, getUserById, getTotalAmount, exportUsersToExcel, updateUserChatStatus, getUserChatStatus };
 
