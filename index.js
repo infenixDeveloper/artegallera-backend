@@ -45,9 +45,9 @@ io.on("connection", (socket) => {
   });
 });
 
-conn.sync({ force: false }).then(() => {
-  httpServer.listen(process.env.PORT || 3002, () => {
-    console.log(`Server is listening at ${process.env.PORT || 3002}`);
-    console.log(`Socket.IO server is ready`);
-  });
+// Iniciar servidor sin sincronizar la base de datos
+// Las migraciones deben ejecutarse manualmente con el sistema de migraciones
+httpServer.listen(process.env.PORT || 3002, () => {
+  console.log(`Server is listening at ${process.env.PORT || 3002}`);
+  console.log(`Socket.IO server is ready`);
 });
