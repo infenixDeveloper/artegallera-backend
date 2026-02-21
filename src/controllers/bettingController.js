@@ -364,12 +364,19 @@ const getReportsTransactions = async (req, res) => {
     }
 };
 
+/**
+ * Obtiene las transacciones de un usuario filtradas por evento
+ * @route GET /api/betting/transactions/:id_user/:id_event
+ * @param {string} id_user - ID del usuario
+ * @param {string} id_event - ID del evento
+ * @returns {Object} Transacciones agrupadas por ronda, ordenadas descendentemente
+ */
 const getTransactionsByUsersAndEvent = async (req, res) => {
     try {
-        // Recibir las fechas como parámetros en la query string
+        // Recibir los parámetros de la ruta
         const { id_user, id_event } = req.params;
 
-        // Verificar si ambas fechas están presentes
+        // Verificar si ambos parámetros están presentes
         if (!id_user || !id_event) {
             return res.status(400).json({
                 success: false,
@@ -444,6 +451,14 @@ const getTransactionsByUsersAndEvent = async (req, res) => {
     }
 };
 
+/**
+ * Lista los eventos únicos asociados a un usuario basándose en sus transacciones
+ * Esta función es útil para obtener la lista de eventos disponibles para filtrar
+ * las transacciones del usuario
+ * @route GET /api/betting/events/:id_user
+ * @param {string} id_user - ID del usuario
+ * @returns {Object} Array de eventos únicos con id y name
+ */
 const getEventByUsersAndEvent = async (req, res) => {
     try {
         // Recibir el id del usuario
@@ -512,6 +527,13 @@ const getEventByUsersAndEvent = async (req, res) => {
     }
 };
 
+/**
+ * Función auxiliar interna que obtiene transacciones y datos del usuario filtrados por evento
+ * Utilizada principalmente por generatePDF para generar reportes
+ * @param {number} userId - ID del usuario
+ * @param {number} eventId - ID del evento
+ * @returns {Object} Objeto con transactionList, user, eventDate, endAmount, startAmount, eventName, userInfo
+ */
 const getTransactionsAndUser = async (userId, eventId) => {
     try {
 

@@ -118,7 +118,7 @@ const createMessage = async (req, res) => {
     // Si no se encontró el usuario en la asociación, obtenerlo directamente
     let userData = associatedUser;
     if (!userData) {
-      console.warn(`⚠️ Usuario no encontrado en asociación para user_id ${user_id}, obteniéndolo directamente`);
+      // console.warn(`⚠️ Usuario no encontrado en asociación para user_id ${user_id}, obteniéndolo directamente`);
       userData = await users.findByPk(user_id, {
         attributes: ['id', 'username', 'email', 'first_name', 'last_name']
       });
@@ -131,7 +131,7 @@ const createMessage = async (req, res) => {
                        ? `${userData.first_name} ${userData.last_name}` 
                        : "Usuario");
 
-    console.log(`👤 Usuario del mensaje - user_id: ${user_id}, username: ${username}, datos:`, userData);
+    // console.log(`👤 Usuario del mensaje - user_id: ${user_id}, username: ${username}, datos:`, userData);
 
     // Emitir mensaje por socket.io en tiempo real al servidor de chat
     // Usar socket.io-client para conectarse como cliente al servidor de socket
@@ -155,7 +155,7 @@ const createMessage = async (req, res) => {
         createdAt: messageWithUser.createdAt
       };
 
-      console.log(`📤 Enviando mensaje por socket - username: ${username}, user_id: ${user_id}, room: ${room}`);
+      // console.log(`📤 Enviando mensaje por socket - username: ${username}, user_id: ${user_id}, room: ${room}`);
 
       // Crear conexión temporal para emitir el mensaje
       const chatSocket = socketIOClient(chatSocketUrl, {
@@ -168,7 +168,7 @@ const createMessage = async (req, res) => {
         // Emitir el mensaje en el formato que espera el servidor de socket
         // El servidor detectará que tiene ID y solo lo emitirá sin guardarlo
         chatSocket.emit("message", room, socketMessageData);
-        console.log(`✅ Mensaje emitido por socket a la sala ${room} desde API REST`);
+        // console.log(`✅ Mensaje emitido por socket a la sala ${room} desde API REST`);
         
         // Desconectar después de emitir
         setTimeout(() => {
@@ -177,7 +177,7 @@ const createMessage = async (req, res) => {
       });
 
       chatSocket.on("connect_error", (error) => {
-        console.warn("⚠️ No se pudo conectar al servidor de socket para emitir mensaje:", error.message);
+        // console.warn("⚠️ No se pudo conectar al servidor de socket para emitir mensaje:", error.message);
         chatSocket.disconnect();
       });
 
@@ -247,7 +247,7 @@ const getMessages = async (req, res) => {
     // Intentar obtener del caché
     const cachedData = await messageCache.getMessages(cacheKey);
     if (cachedData) {
-      console.log(`📦 [CACHE] Mensajes obtenidos del caché: ${cacheKey}`);
+      // console.log(`📦 [CACHE] Mensajes obtenidos del caché: ${cacheKey}`);
       return res.status(200).json({
         success: true,
         message: 'Mensajes obtenidos exitosamente (caché)',
@@ -257,7 +257,7 @@ const getMessages = async (req, res) => {
     }
 
     // Si no está en caché, obtener de la BD
-    console.log(`🗄️ [DB] Mensajes obtenidos de la base de datos: ${cacheKey}`);
+    // console.log(`🗄️ [DB] Mensajes obtenidos de la base de datos: ${cacheKey}`);
     
     // Construir filtros
     const where = {};
@@ -322,7 +322,7 @@ const getMessagesByEvent = async (req, res) => {
     // Intentar obtener del caché
     const cachedData = await messageCache.getMessages(cacheKey);
     if (cachedData) {
-      console.log(`📦 [CACHE] Mensajes del evento obtenidos del caché: ${cacheKey}`);
+      // console.log(`📦 [CACHE] Mensajes del evento obtenidos del caché: ${cacheKey}`);
       return res.status(200).json({
         success: true,
         message: 'Mensajes del evento obtenidos exitosamente (caché)',
@@ -332,7 +332,7 @@ const getMessagesByEvent = async (req, res) => {
     }
 
     // Si no está en caché, obtener de la BD
-    console.log(`🗄️ [DB] Mensajes del evento obtenidos de la base de datos: ${cacheKey}`);
+    // console.log(`🗄️ [DB] Mensajes del evento obtenidos de la base de datos: ${cacheKey}`);
 
     const messagesList = await messages.findAll({
       where: { event_id: eventIdNum },
@@ -390,7 +390,7 @@ const getGeneralMessages = async (req, res) => {
     }
 
     // Si no está en caché, obtener de la BD
-    console.log(`🗄️ [DB] Mensajes generales obtenidos de la base de datos: ${cacheKey}`);
+    // console.log(`🗄️ [DB] Mensajes generales obtenidos de la base de datos: ${cacheKey}`);
 
     const messagesList = await messages.findAll({
       where: { event_id: null },
@@ -456,11 +456,11 @@ const deleteMessage = async (req, res) => {
     if (eventId) {
       // Invalidar caché del evento específico
       await messageCache.invalidateEvent(eventId);
-      console.log(`🔄 Caché invalidado para evento ${eventId}`);
+      // console.log(`🔄 Caché invalidado para evento ${eventId}`);
     } else {
       // Invalidar caché de mensajes generales
       await messageCache.invalidateGeneral();
-      console.log('🔄 Caché invalidado para mensajes generales');
+      // console.log('🔄 Caché invalidado para mensajes generales');
     }
 
     // Emitir evento por socket para notificar eliminación en tiempo real
@@ -480,7 +480,7 @@ const deleteMessage = async (req, res) => {
       chatSocket.on("connect", () => {
         // Emitir evento de eliminación de mensaje
         chatSocket.emit("messageDeleted", room, { messageId: messageIdNum });
-        console.log(`✅ Evento de eliminación emitido por socket para mensaje ${messageIdNum} en sala ${room}`);
+        // console.log(`✅ Evento de eliminación emitido por socket para mensaje ${messageIdNum} en sala ${room}`);
         
         // Desconectar después de emitir
         setTimeout(() => {
@@ -489,7 +489,7 @@ const deleteMessage = async (req, res) => {
       });
 
       chatSocket.on("connect_error", (error) => {
-        console.warn("⚠️ No se pudo conectar al servidor de socket para emitir evento de eliminación:", error.message);
+        // console.warn("⚠️ No se pudo conectar al servidor de socket para emitir evento de eliminación:", error.message);
         chatSocket.disconnect();
       });
 
@@ -500,7 +500,7 @@ const deleteMessage = async (req, res) => {
         }
       }, 2000);
     } catch (error) {
-      console.error("❌ Error al emitir evento de eliminación por socket:", error.message);
+      // console.error("❌ Error al emitir evento de eliminación por socket:", error.message);
     }
 
     res.status(200).json({
@@ -577,13 +577,13 @@ const deleteMultipleMessages = async (req, res) => {
     // Invalidar caché para cada evento único
     for (const eventId of eventIds) {
       await messageCache.invalidateEvent(eventId);
-      console.log(`🔄 Caché invalidado para evento ${eventId}`);
+      // console.log(`🔄 Caché invalidado para evento ${eventId}`);
     }
 
     // Invalidar caché de mensajes generales si hay alguno
     if (hasGeneralMessages) {
       await messageCache.invalidateGeneral();
-      console.log('🔄 Caché invalidado para mensajes generales');
+      // console.log('🔄 Caché invalidado para mensajes generales');
     }
 
     // Emitir eventos por socket para notificar eliminaciones en tiempo real
@@ -612,7 +612,7 @@ const deleteMultipleMessages = async (req, res) => {
         chatSocket.on("connect", () => {
           // Emitir evento de eliminación múltiple
           chatSocket.emit("messagesDeleted", room, { messageIds: messagesByRoom[room] });
-          console.log(`✅ Evento de eliminación múltiple emitido por socket para sala ${room}:`, messagesByRoom[room]);
+          // console.log(`✅ Evento de eliminación múltiple emitido por socket para sala ${room}:`, messagesByRoom[room]);
           
           // Desconectar después de emitir
           setTimeout(() => {
@@ -621,7 +621,7 @@ const deleteMultipleMessages = async (req, res) => {
         });
 
         chatSocket.on("connect_error", (error) => {
-          console.warn("⚠️ No se pudo conectar al servidor de socket:", error.message);
+          // console.warn("⚠️ No se pudo conectar al servidor de socket:", error.message);
           chatSocket.disconnect();
         });
 
