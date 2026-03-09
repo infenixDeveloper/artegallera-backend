@@ -126,10 +126,48 @@ async function Delete(req, res) {
     }
     return res.json(result);
 }
+
+async function UpdateSpectators(req, res) {
+    let result = {};
+    try {
+        let { id } = req.params;
+        let { base_viewers } = req.body;
+
+        const parsedBaseViewers = Number(base_viewers);
+        if (!Number.isFinite(parsedBaseViewers) || parsedBaseViewers < 0 || !Number.isInteger(parsedBaseViewers)) {
+            result = {
+                success: false,
+                message: 'base_viewers debe ser un número entero mayor o igual a 0'
+            };
+            return res.json(result);
+        }
+
+        const [updatedRows] = await events.update({ base_viewers: parsedBaseViewers }, { where: { id } });
+        if (updatedRows > 0) {
+            result = {
+                success: true,
+                message: 'Espectadores actualizados'
+            };
+        } else {
+            result = {
+                success: false,
+                message: 'Evento no encontrado'
+            };
+        }
+    } catch (error) {
+        result = {
+            success: false,
+            message: 'Error al ejecutar la funcion',
+            error: error.message
+        };
+    }
+    return res.json(result);
+}
 module.exports = {
     GetAll,
     GetId,
     Create,
     Update,
-    Delete
+    Delete,
+    UpdateSpectators
 }
