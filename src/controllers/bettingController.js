@@ -414,9 +414,9 @@ const getTransactionsByUsersAndEvent = async (req, res) => {
 
 
 
-        // Agrupar las transacciones por 'round' y ordenarlas por id dentro de cada grupo
+        // Agrupar las transacciones por 'round' (soportar roundData null: usar round del registro o 0)
         const groupedTransactions = transactions.reduce((acc, transaction) => {
-            const round = transaction.roundData.round;
+            const round = transaction.roundData?.round ?? transaction.round ?? 0;
             if (!acc[round]) {
                 acc[round] = [];
             }
@@ -537,9 +537,10 @@ const getEventByUsersAndEvent = async (req, res) => {
 const getTransactionsAndUser = async (userId, eventId) => {
     try {
 
-        if (!userId || !eventId) return;
+        if (!userId || !eventId) return null;
 
         const user = await users.findByPk(userId);
+        if (!user) return null;
         // Realizar la consulta utilizando Sequelize
         const transactions = await usertransactions.findAll({
             where: {
@@ -572,11 +573,9 @@ const getTransactionsAndUser = async (userId, eventId) => {
             // logging: console.log  // Imprime la consulta SQL en la consola
         });
 
-        // Agrupar las transacciones por 'round' y ordenarlas por id dentro de cada grupo
+        // Agrupar las transacciones por 'round' (soportar roundData null)
         const groupedTransactions = transactions.reduce((acc, transaction) => {
-
-            const round = transaction.roundData.round;
-
+            const round = transaction.roundData?.round ?? transaction.round ?? 0;
             if (!acc[round]) {
                 acc[round] = [];
             }
@@ -584,11 +583,10 @@ const getTransactionsAndUser = async (userId, eventId) => {
             return acc;
         }, {});
         const sortedRounds = Object.keys(groupedTransactions).sort((a, b) => b - a);
-        // Crear un nuevo array con las transacciones agrupadas y ordenadas
         const sortedTransactions = sortedRounds.map(round => {
             return {
                 round,
-                transactions: groupedTransactions[round].sort((a, b) => b.id - a.id)  // Ordenar las transacciones dentro del round
+                transactions: groupedTransactions[round].sort((a, b) => b.id - a.id)
             };
         });
 
@@ -596,17 +594,21 @@ const getTransactionsAndUser = async (userId, eventId) => {
             round: item.round,
             transactions: item.transactions.map(tx => ({
                 id: tx.id,
-                username: tx.user.username,
+                username: tx.user?.username ?? '-',
                 transactionType: tx.type_transaction,
                 previousBalance: tx.previous_balance,
                 amount: tx.amount,
                 currentBalance: tx.current_balance,
-                team: tx.team,
-                eventName: tx.roundData.event.name,
-                eventDate: tx.roundData.event.date,
+                team: tx.team ?? '-',
+                eventName: tx.roundData?.event?.name ?? 'Evento',
+                eventDate: tx.roundData?.event?.date ?? tx.createdAt,
                 id_round: tx.id_round
             }))
         }));
+
+        if (!transactionList.length || !transactionList[0].transactions.length) {
+            return null;
+        }
 
         const date = new Date(transactionList[0].transactions[0].eventDate);
 
@@ -626,9 +628,9 @@ const getTransactionsAndUser = async (userId, eventId) => {
           }}})
         const startAmount = startAmountResp?.previous_balance
         const userInfo = {
-            username: user.username,
-            first_name: user.first_name,
-            last_name: user.last_name,
+            username: user?.username ?? '-',
+            first_name: user?.first_name ?? '',
+            last_name: user?.last_name ?? '',
             eventDate: eventDate,
             startAmount: startAmount,
             endAmount: endAmount
@@ -669,6 +671,12 @@ const generatePDF = async (req, res) => {
     try {
         const { id_user, id_event } = req.params;
         const data = await getTransactionsAndUser(id_user, id_event);
+        if (!data || !data.transactionList || !data.transactionList.length) {
+            return res.status(400).json({
+                success: false,
+                message: 'No hay transacciones para este usuario y evento'
+            });
+        }
         const { transactionList, eventDate, endAmount, startAmount, eventName, userInfo } = data;
 
         const startX = 50;
